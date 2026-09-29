@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SwiftSite AI Assistant — Ask about services, pricing and your project</title>
+<meta name="description" content="SwiftSite AI is the digital concierge for SwiftSite, a web development studio. Ask about services, pricing, process and contact — in English or Roman Urdu.">
+<meta name="theme-color" content="#0B0B0D">
+<meta name="color-scheme" content="dark">
+
+<!--
+  SECURITY / DEPLOYMENT
+  --------------------
+  A Gemini API key must never be committed to public source.
+  Preferred: your host injects the secret into the page at deploy time, e.g.
+
+    <script>window.SWIFTSITE_ENV = { GEMINI_API_KEY: "%%GEMINI_API_KEY%%" };</script>
+
+  or a server-rendered tag:
+
+    <meta name="swiftsite-gemini-key" content="...">
+
+  Best practice for production: put ai.js behind your own proxy endpoint
+  (see README.md) so the key never reaches the browser at all.
+  Until a key exists the site still renders perfectly and says so honestly.
+-->
+<script>window.SWIFTSITE_ENV = window.SWIFTSITE_ENV || {};</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body data-ai-state="idle" data-chat="closed">
+
+<a class="skip-link" href="#assistant">Skip to the assistant</a>
+
+<!-- ambient layers -->
+<div class="ambient" aria-hidden="true">
+  <div class="ambient__warm"></div>
+  <div class="ambient__cool"></div>
+  <div class="ambient__lines"></div>
+  <div class="ambient__drift"></div>
+</div>
+<div class="grain" aria-hidden="true"></div>
+
+<!-- custom cursor -->
+<div class="cursor cursor--ring" id="cursorRing" aria-hidden="true"></div>
+<div class="cursor cursor--dot" id="cursorDot" aria-hidden="true"></div>
+
+<div class="scroll-progress" aria-hidden="true"><span id="scrollBar"></span></div>
+
+<header class="topbar" id="topbar">
+  <a class="brandmark" href="#hero" data-cursor="link" aria-label="SwiftSite — home">
+    <svg class="brandmark__mark" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 17.5c3.6 0 4.2-13 8-13 2.6 0 3 4.4 5.6 4.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      <circle cx="19.4" cy="8.9" r="1.5" fill="currentColor"/>
+    </svg>
+    <span class="brandmark__word">SwiftSite</span>
+  </a>
+
+  <nav class="nav" id="nav" aria-label="Sections">
+    <a href="#assistant" data-nav="assistant" data-cursor="link">Assistant</a>
+    <a href="#services" data-nav="services" data-cursor="link">Services</a>
+    <a href="#process" data-nav="process" data-cursor="link">Process</a>
+    <a href="#pricing" data-nav="pricing" data-cursor="link">Pricing</a>
+    <a href="#contact" data-nav="contact" data-cursor="link">Contact</a>
+  </nav>
+
+  <button class="status" id="aiStatusBtn" type="button" data-cursor="button"
+          aria-label="AI connection status. Open connection settings.">
+    <span class="status__dot" id="statusDot" aria-hidden="true"></span>
+    <span class="status__text" id="statusText">AI · idle</span>
+  </button>
+
+  <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="nav" aria-label="Open menu">
+    <span></span><span></span>
+  </button>
+</header>
+
+<main id="top">
+
+  <!-- ============ 01 — HERO ============ -->
+  <section class="hero" id="hero" aria-labelledby="heroTitle">
+    <div class="shell hero__grid">
+
+      <div class="hero__copy">
+        <p class="kicker reveal" data-d="0">
+          <span class="kicker__dot" aria-hidden="true"></span>
+          SwiftSite <span class="kicker__sep" aria-hidden="true">/</span> AI Assistant
+        </p>
+
+        <h1 class="hero__title" id="heroTitle">
+          <span class="line reveal" data-d="1">Your questions.</span>
+          <span class="line line--alt reveal" data-d="2">Answered <em>instantly.</em></span>
+        </h1>
+
+        <p class="hero__sub reveal" data-d="3">
+          Ask about services, pricing or starting your project.
+        </p>
+
+        <div class="hero__actions reveal" data-d="4">
+          <button class="btn btn--primary" id="startBtn" type="button" data-cursor="button">
+            <span>Start conversation</span>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <a class="btn btn--ghost" href="#services" data-cursor="link">
+            <span>View services</span>
+          </a>
+        </div>
+
+        <ul class="hero__meta reveal" data-d="5">
+          <li>English <span aria-hidden="true">&amp;</span> Roman Urdu — detected automatically</li>
+          <li>Answers come from the studio's real configuration</li>
+        </ul>
+      </div>
+
+      <div class="hero__core">
+        <div class="core" id="core" data-cursor="core">
+          <div class="core__stage">
+            <div class="core__halo"></div>
+            <div class="core__rings" aria-hidden="true">
+              <span class="ring ring--a"></span>
+              <span class="ring ring--b"></span>
+              <span class="ring ring--c"></span>
+            </div>
+            <div class="core__orb" aria-hidden="true">
+              <span class="orb__energy"></span>
+              <span class="orb__veil"></span>
+              <span class="orb__spec"></span>
+              <span class="orb__rim"></span>
+              <span class="orb__depth"></span>
+            </div>
+            <div class="core__motes" aria-hidden="true">
+              <span class="mote" style="--i:0"></span>
+              <span class="mote" style="--i:1"></span>
+              <span class="mote" style="--i:2"></span>
+              <span class="mote" style="--i:3"></span>
+              <span class="mote" style="--i:4"></span>
+              <span class="mote" style="--i:5"></span>
+              <span class="mote mote--far" style="--i:6"></span>
+              <span class="mote mote--far" style="--i:7"></span>
+            </div>
+            <div class="core__floor" aria-hidden="true"></div>
+          </div>
+          <p class="core__caption">
+            <span class="core__pulse" aria-hidden="true"></span>
+            <span id="coreCaption">Idle — the assistant is awake</span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero__wordmark" aria-hidden="true">
+      <span class="hero__wordmark-text">SwiftSite</span>
+      <span class="hero__wordmark-tag">Digital concierge · <span id="heroVersion">v1.0</span></span>
+    </div>
+
+    <a class="scroll-cue" href="#assistant" data-cursor="link" aria-label="Scroll to the assistant">
+      <span class="scroll-cue__line" aria-hidden="true"></span>
+      <span class="scroll-cue__label">scroll</span>
+    </a>
+  </section>
+
+  <!-- ============ 02 — ASSISTANT ============ -->
+  <section class="assistant section" id="assistant" aria-labelledby="assistantTitle">
+    <div class="shell assistant__grid">
+
+      <aside class="rail" aria-label="Assistant controls">
+        <div class="rail__sticky">
+          <p class="eyebrow reveal"><span class="eyebrow__num">02</span><span class="eyebrow__rule" aria-hidden="true"></span>Assistant</p>
+          <h2 class="sec-title sec-title--rail reveal" id="assistantTitle" data-d="1">Ask <em>SwiftSite.</em></h2>
+
+          <div class="core core--dock reveal" data-d="2" aria-hidden="true">
+            <div class="core__stage">
+              <div class="core__halo"></div>
+              <div class="core__orb">
+                <span class="orb__energy"></span>
+                <span class="orb__veil"></span>
+                <span class="orb__spec"></span>
+                <span class="orb__rim"></span>
+              </div>
+              <div class="core__rings"><span class="ring ring--a"></span><span class="ring ring--b"></span></div>
+              <div class="core__motes">
+                <span class="mote" style="--i:0"></span>
+                <span class="mote" style="--i:2"></span>
+                <span class="mote" style="--i:4"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="rail__status reveal" data-d="3">
+            <p class="mono-label">State</p>
+            <p class="rail__state" id="railState">Idle</p>
+          </div>
+
+          <div class="rail__group reveal" data-d="4">
+            <p class="mono-label">Reply in</p>
+            <div class="lang-toggle" id="langToggle" role="group" aria-label="Response language">
+              <button type="button" class="lang-toggle__btn is-active" data-lang="auto" aria-pressed="true" data-cursor="button">Auto</button>
+              <button type="button" class="lang-toggle__btn" data-lang="en" aria-pressed="false" data-cursor="button">English</button>
+              <button type="button" class="lang-toggle__btn" data-lang="roman-urdu" aria-pressed="false" data-cursor="button">Roman Urdu</button>
+            </div>
+          </div>
+
+          <div class="rail__group rail__tools reveal" data-d="5">
+            <button type="button" class="tool" id="copyLastBtn" data-cursor="button" disabled>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M10.5 3.5h-7a1 1 0 0 0-1 1v7" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
+              Copy last answer
+            </button>
+            <button type="button" class="tool" id="clearBtn" data-cursor="button" disabled>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5h10M6.5 5V3.5h3V5M4.5 5l.6 8h5.8l.6-8" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+              Clear conversation
+            </button>
+            <button type="button" class="tool" id="connectBtn" data-cursor="button">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 9.5 9.5 6.5M5 8 3.4 9.6a2.8 2.8 0 0 0 4 4L9 12M11 8l1.6-1.6a2.8 2.8 0 0 0-4-4L7 4" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+              <span id="connectBtnLabel">AI connection</span>
+            </button>
+          </div>
+
+          <p class="rail__fine reveal" data-d="6">
+            Answers are generated by Google Gemini and grounded in this studio's
+            configuration. Verify anything important before you act on it.
+          </p>
+        </div>
+      </aside>
+
+      <div class="convo">
+        <div class="convo__head reveal">
+          <p class="mono-label" id="convoCount">No messages yet</p>
+          <p class="mode-badge" id="modeBadge">
+            <span class="mode-badge__dot" aria-hidden="true"></span>
+            <span id="modeBadgeLabel">offline knowledge</span>
+          </p>
+          <p class="mono-label convo__hint">Enter to send · Shift + Enter for a new line</p>
+        </div>
+
+        <div class="connect-banner" id="connectBanner" hidden>
+          <p>
+            <span class="connect-banner__dot" aria-hidden="true"></span>
+            <strong id="connectTitle">Offline mode — the chat still works.</strong>
+            <span id="connectBody">Answers come from SwiftSite's own configuration on this page.</span>
+          </p>
+          <button type="button" class="btn btn--tiny" id="connectBannerBtn" data-cursor="button">Attach Gemini key</button>
+        </div>
+
+        <div class="empty" id="emptyState">
+          <p class="empty__title">Not sure where to start?</p>
+          <p class="empty__sub">Tell me what you are building — one line is enough.</p>
+          <div class="suggest" id="suggestGrid"></div>
+        </div>
+
+        <div class="thread" id="thread" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Conversation with SwiftSite AI"></div>
+
+        <form class="composer" id="composerForm" autocomplete="off">
+          <label class="sr-only" for="input">Write your question for SwiftSite AI</label>
+          <textarea id="input" name="input" rows="1" placeholder="Ask about services, pricing or your project — English ya Roman Urdu"
+                    aria-describedby="composerHint"></textarea>
+          <div class="composer__bar">
+            <p class="mono-label" id="composerHint">SwiftSite AI answers from the studio's real configuration.</p>
+            <button class="send" id="sendBtn" type="submit" data-cursor="button" aria-label="Send message">
+              <span class="send__label">Send</span>
+              <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M3 9h11M10 5l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 03 — SERVICES ============ -->
+  <section class="section services" id="services" aria-labelledby="servicesTitle">
+    <div class="shell">
+      <header class="sec-head sec-head--split">
+        <div>
+          <p class="eyebrow reveal"><span class="eyebrow__num">03</span><span class="eyebrow__rule" aria-hidden="true"></span>Services</p>
+          <h2 class="sec-title reveal" id="servicesTitle" data-d="1">What we <em>build</em></h2>
+        </div>
+        <p class="sec-note reveal" data-d="2">
+          Eight things we do properly. Each one is listed here exactly as it is
+          configured for the assistant — no invented specialities.
+        </p>
+      </header>
+
+      <ol class="service-list" id="serviceList"></ol>
+    </div>
+  </section>
+
+  <!-- ============ 04 — PROCESS ============ -->
+  <section class="section process" id="process" aria-labelledby="processTitle">
+    <div class="shell">
+      <header class="sec-head sec-head--left">
+        <p class="eyebrow reveal"><span class="eyebrow__num">04</span><span class="eyebrow__rule" aria-hidden="true"></span>How it works</p>
+        <h2 class="sec-title reveal" id="processTitle" data-d="1">Three steps, <em>no theatre</em></h2>
+      </header>
+      <div class="process__list" id="processList"></div>
+    </div>
+  </section>
+
+  <!-- ============ 05 — PRICING ============ -->
+  <section class="section pricing" id="pricing" aria-labelledby="pricingTitle">
+    <div class="shell">
+      <header class="sec-head sec-head--split">
+        <div>
+          <p class="eyebrow reveal"><span class="eyebrow__num">05</span><span class="eyebrow__rule" aria-hidden="true"></span>Pricing</p>
+          <h2 class="sec-title reveal" id="pricingTitle" data-d="1">The <em>ledger</em></h2>
+        </div>
+        <p class="sec-note reveal" data-d="2" id="pricingNote"></p>
+      </header>
+
+      <div class="ledger reveal" data-d="2">
+        <div class="ledger__head" aria-hidden="true">
+          <span>Package</span><span>Includes</span><span>Timeline</span><span>Investment</span>
+        </div>
+        <div class="ledger__body" id="pricingBody"></div>
+      </div>
+
+      <p class="ledger__ask reveal">
+        Want a real number for your project? Ask the assistant —
+        <button type="button" class="linkish" id="askPricingBtn" data-cursor="link">“What would my website cost?”</button>
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ 06 — CONTACT ============ -->
+  <section class="section contact" id="contact" aria-labelledby="contactTitle">
+    <div class="shell contact__grid">
+      <div class="contact__left">
+        <p class="eyebrow reveal"><span class="eyebrow__num">06</span><span class="eyebrow__rule" aria-hidden="true"></span>Contact</p>
+        <h2 class="sec-title contact__title reveal" id="contactTitle" data-d="1">
+          Let's build something <em>worth visiting.</em>
+        </h2>
+
+        <dl class="channels reveal" id="contactChannels" data-d="2"></dl>
+
+        <div class="socials reveal" id="contactSocials" data-d="3"></div>
+
+        <div class="contact__actions reveal" data-d="4">
+          <a class="btn btn--primary" id="emailBtn" data-cursor="button" aria-disabled="true"><span>Email</span></a>
+          <a class="btn btn--ghost" id="whatsappBtn" data-cursor="button" aria-disabled="true"><span>WhatsApp</span></a>
+          <button class="btn btn--ghost" id="startProjectBtn" type="button" data-cursor="button"><span>Start project</span></button>
+        </div>
+      </div>
+
+      <div class="contact__right">
+        <form class="form" id="projectForm" novalidate>
+          <p class="mono-label form__label">Project enquiry</p>
+
+          <div class="field">
+            <label for="fName">Name</label>
+            <input id="fName" name="name" type="text" autocomplete="name" aria-describedby="eName">
+            <p class="field__error" id="eName" hidden></p>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="fEmail">Email</label>
+              <input id="fEmail" name="email" type="email" autocomplete="email" aria-describedby="eEmail">
+              <p class="field__error" id="eEmail" hidden></p>
+            </div>
+            <div class="field">
+              <label for="fPhone">Phone <span class="opt">optional</span></label>
+              <input id="fPhone" name="phone" type="tel" autocomplete="tel" aria-describedby="ePhone">
+              <p class="field__error" id="ePhone" hidden></p>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="fType">Project type</label>
+              <select id="fType" name="projectType" aria-describedby="eType"></select>
+              <p class="field__error" id="eType" hidden></p>
+            </div>
+            <div class="field">
+              <label for="fBudget">Budget</label>
+              <select id="fBudget" name="budget" aria-describedby="eBudget"></select>
+              <p class="field__error" id="eBudget" hidden></p>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="fMessage">What are you building?</label>
+            <textarea id="fMessage" name="message" rows="4" aria-describedby="eMessage"></textarea>
+            <p class="field__error" id="eMessage" hidden></p>
+          </div>
+
+          <button class="btn btn--primary btn--wide" id="formSubmit" type="submit" data-cursor="button">
+            <span>Prepare enquiry</span>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+
+          <div class="form__result" id="formResult" role="status" aria-live="polite" hidden></div>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="shell footer__grid">
+    <p class="footer__mark">SwiftSite</p>
+    <p class="footer__line">
+      <span id="footerYear">2026</span> SwiftSite — website built in-house.
+      Assistant responses are generated and can be wrong.
+    </p>
+    <nav class="footer__nav" aria-label="Footer">
+      <a href="#assistant" data-cursor="link">Assistant</a>
+      <a href="#pricing" data-cursor="link">Pricing</a>
+      <a id="footerInstagram" href="https://www.instagram.com/swif.site" target="_blank" rel="noopener noreferrer" data-cursor="link">Instagram</a>
+      <a id="footerGithub" href="https://github.com/Mharryjs" target="_blank" rel="noopener noreferrer" data-cursor="link">GitHub</a>
+      <a href="#hero" data-cursor="link">Back to top</a>
+    </nav>
+  </div>
+</footer>
+
+<!-- connection modal -->
+<div class="modal" id="connectModal" hidden>
+  <div class="modal__backdrop" data-close-modal aria-hidden="true"></div>
+  <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDesc">
+    <button class="modal__x" id="modalClose" type="button" aria-label="Close" data-cursor="button">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+    </button>
+    <p class="mono-label">AI connection</p>
+    <h3 class="modal__title" id="modalTitle">Bring your own key</h3>
+    <p class="modal__desc" id="modalDesc">
+      The chat already works without a key — <code>local.js</code> answers from this
+      studio's own configuration and every reply is tagged <em>local knowledge</em>.
+      Attach a Gemini key to route the same questions to the model instead. SwiftSite
+      never ships a key inside public source code; if your host injects
+      <code>window.SWIFTSITE_ENV.GEMINI_API_KEY</code> at deploy time, this panel is
+      not needed at all.
+    </p>
+    <ul class="modal__notes">
+      <li>Stored in <code>sessionStorage</code> — gone when the tab closes.</li>
+      <li>Never rendered in the UI, never written to the console.</li>
+      <li>For production, move <code>ai.js</code> behind your own proxy (see README).</li>
+    </ul>
+    <form id="connectForm" class="modal__form">
+      <label class="sr-only" for="keyInput">Gemini API key</label>
+      <input id="keyInput" type="password" name="geminiKey" placeholder="Paste Gemini API key" autocomplete="off" spellcheck="false">
+      <div class="modal__actions">
+        <button class="btn btn--primary" type="submit" id="keySave" data-cursor="button"><span>Attach &amp; test</span></button>
+        <button class="btn btn--ghost" type="button" id="keyRemove" data-cursor="button"><span>Remove key</span></button>
+      </div>
+      <p class="modal__msg" id="connectMsg" role="status" aria-live="polite"></p>
+    </form>
+    <p class="modal__state">Current source: <strong id="keySourceLabel">none</strong></p>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<noscript>
+  <p class="noscript">This assistant needs JavaScript. The studio's services, process and pricing are still readable below.</p>
+</noscript>
+
+<script src="config.js" defer></script>
+<script src="local.js" defer></script>
+<script src="ai.js" defer></script>
+<script src="script.js" defer></script>
+</body>
+</html>
